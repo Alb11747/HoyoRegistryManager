@@ -287,7 +287,7 @@ function Save-Profile {
     if ([string]::IsNullOrWhiteSpace($ProfileName)) {
         $ProfileName = $Global:CurrentConfig.DefaultProfileName
     }
-
+    
     $ExistingProfile = $Global:Profiles | Where-Object { $_.Name -eq $ProfileName }
     if ($ExistingProfile) {
         $ProceedOverwrite = $false # Default to not overwriting
@@ -426,6 +426,9 @@ function Import-Profile {
         return
     }
     
+    # Track which files were imported from current managed keys
+    $ImportedFiles = @()
+    
     foreach ($KeyToManage in $Global:CurrentConfig.ManagedKeys) {
         if ($FilesToAttemptImport -contains $KeyToManage.FileName) {
             $RegFileToImport = Join-Path $ProfileDirToLoad $KeyToManage.FileName
@@ -456,11 +459,44 @@ function Import-Profile {
             Write-Host "Importing $($KeyToManage.UserFriendlyName) settings from profile '$($SelectedProfile.Name)'..."
             if (Import-RegistryKey -ImportFilePath $RegFileToImport) {
                 Write-Host "Imported $($KeyToManage.UserFriendlyName) settings successfully." -ForegroundColor Green
+                $ImportedFiles += $KeyToManage.FileName
             }
             else {
                 Write-Warning "Failed to import $($KeyToManage.UserFriendlyName) settings from profile."
                 $LoadedAllSuccessfully = $false
             }
+        }
+    }
+    
+    # Handle orphaned registry files - files that exist in profile but aren't in current managed keys
+    $AllRegFilesInProfile = Get-ChildItem -Path $ProfileDirToLoad -Filter "*.reg" | Select-Object -ExpandProperty Name
+    $OrphanedFiles = $AllRegFilesInProfile | Where-Object { $_ -notin $ImportedFiles -and $_ -notin ($Global:CurrentConfig.ManagedKeys | ForEach-Object { $_.FileName }) }
+    
+    if ($OrphanedFiles.Count -gt 0) {
+        Write-Host ""
+        Write-Warning "Found registry files in profile that are not in current managed keys configuration:"
+        foreach ($OrphanedFile in $OrphanedFiles) {
+            Write-Host "  - $OrphanedFile" -ForegroundColor Yellow
+        }
+        Write-Host ""
+        Write-Host "These files may be from an older version of this script configuration." -ForegroundColor Cyan
+        $ImportOrphaned = Read-Host "Do you want to import these orphaned files anyway? (y/N)"
+        
+        if ($ImportOrphaned -eq 'y' -or $ImportOrphaned -eq 'Y') {
+            foreach ($OrphanedFile in $OrphanedFiles) {
+                $OrphanedFilePath = Join-Path $ProfileDirToLoad $OrphanedFile
+                Write-Host "Importing orphaned file: $OrphanedFile..." -ForegroundColor Yellow
+                if (Import-RegistryKey -ImportFilePath $OrphanedFilePath) {
+                    Write-Host "Successfully imported orphaned file: $OrphanedFile" -ForegroundColor Green
+                }
+                else {
+                    Write-Warning "Failed to import orphaned file: $OrphanedFile"
+                    $LoadedAllSuccessfully = $false
+                }
+            }
+        }
+        else {
+            Write-Host "Skipped importing orphaned files." -ForegroundColor Gray
         }
     }
     
