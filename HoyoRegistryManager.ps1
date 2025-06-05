@@ -368,18 +368,11 @@ function Import-Profile {
         return
     }
 
-    $SortedProfiles = $Global:Profiles | Sort-Object CreationDate 
-    Write-Host "Available profiles (sorted by creation date, oldest first):"
+    $SortedProfiles = $Global:Profiles | Sort-Object CreationDate -Descending
+    Write-Host "Available profiles (sorted by creation date, newest first):"
     for ($i = 0; $i -lt $SortedProfiles.Count; $i++) {
         $ProfileEntry = $SortedProfiles[$i]
-        try {
-            $CreationDateLocal = ([datetime]::ParseExact($ProfileEntry.CreationDate, "o", [System.Globalization.CultureInfo]::InvariantCulture)).ToLocalTime()
-            Write-Host ("{0}. {1} (Created: {2})" -f ($i + 1), $ProfileEntry.Name, $CreationDateLocal.ToString("yyyy-MM-dd HH:mm:ss"))
-        }
-        catch {
-            Write-Warning "Could not parse creation date for profile $($ProfileEntry.Name)."
-            Write-Host ("{0}. {1} (Created: {2})" -f ($i + 1), $ProfileEntry.Name, $ProfileEntry.CreationDate)
-        }
+        Write-Host ("{0}. {1} (Created: {2})" -f ($i + 1), $ProfileEntry.Name, $ProfileEntry.CreationDate)
     }
     Write-Host
 
@@ -510,6 +503,25 @@ function Import-Profile {
     Read-Host "Press Enter to continue..."
 }
 
+
+function Convert-Date {
+    param (
+        [string]$DateString
+    )
+    try {
+        # Try to parse the date in ISO 8601 format first
+        $Date = [datetime]::ParseExact($DateString, "o", [System.Globalization.CultureInfo]::InvariantCulture).ToLocalTime()
+        if ($Date) { return $Date }
+        # If that fails, try parsing it in MM/dd/yyyy format
+        $Date = [datetime]::Parse($DateString).ToLocalTime()
+        if ($Date) { return $Date }
+    }
+    catch {
+        Write-Warning "Failed to parse date string '$DateString'."
+        return $DateString
+    }
+}
+
 function Show-ProfileManagementMenu {
     while ($true) {
         Clear-Host
@@ -520,18 +532,22 @@ function Show-ProfileManagementMenu {
             return
         }
 
-        $SortedProfiles = $Global:Profiles | Sort-Object CreationDate
-        Write-Host "Available profiles (sorted by creation date, oldest first):"
+        $SortedProfiles = $Global:Profiles | Sort-Object CreationDate -Descending
+        Write-Host "Available profiles (sorted by creation date, newest first):"
         for ($i = 0; $i -lt $SortedProfiles.Count; $i++) {
             $ProfileEntry = $SortedProfiles[$i]
-            try {
-                $CreationDateLocal = ([datetime]::ParseExact($ProfileEntry.CreationDate, "o", [System.Globalization.CultureInfo]::InvariantCulture)).ToLocalTime()
+            if (-not $ProfileEntry.CreationDate) {
+                Write-Warning "Profile $($ProfileEntry.Name) has no creation date set."
+                Write-Host ("{0}. {1} (Created: Unknown)" -f ($i + 1), $ProfileEntry.Name)
+                continue
+            }
+            $CreationDateLocal = Convert-Date $ProfileEntry.CreationDate
+            if ($CreationDateLocal) {
                 Write-Host ("{0}. {1} (Created: {2})" -f ($i + 1), $ProfileEntry.Name, $CreationDateLocal.ToString("yyyy-MM-dd HH:mm:ss"))
+                continue
             }
-            catch {
-                Write-Warning "Could not parse creation date for profile $($ProfileEntry.Name)."
-                Write-Host ("{0}. {1} (Created: {2})" -f ($i + 1), $ProfileEntry.Name, $ProfileEntry.CreationDate)
-            }
+            Write-Warning "Could not parse creation date for profile $($ProfileEntry.Name)."
+            Write-Host ("{0}. {1} (Created: {2})" -f ($i + 1), $ProfileEntry.Name, $ProfileEntry.CreationDate)
         }
         Write-Host
         Write-Host "0. Back to Main Menu"
