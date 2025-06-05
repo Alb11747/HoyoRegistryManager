@@ -21,7 +21,7 @@ $Global:DefaultManagedKeys = @(
     @{ Path = "HKCU\Software\miHoYoSDK"; UserFriendlyName = "miHoYo SDK (Common)"; IsIncludedByDefault = $true; FileName = "miHoYoSDK.reg" },
     # @{ Path = "HKCU\Software\miHoYo"; UserFriendlyName = "miHoYo (Genshin, ZZZ, Hi3)"; IsIncludedByDefault = $true; FileName = "miHoYo.reg" },
     # @{ Path = "HKEY_CURRENT_USER\Software\Cognosphere"; UserFriendlyName = "Cognosphere (HSR)"; IsIncludedByDefault = $true; FileName = "Cognosphere.reg" },
-    @{ Path = "HKEY_CURRENT_USER\Software\miHoYo\Genshin Impact"; UserFriendlyName = "Genshin Impact"; IsIncludedByDefault = $true; FileName = "miHoYo_Genshin.reg" },
+    @{ Path = "HKEY_CURRENT_USER\Software\miHoYo\Genshin Impact"; UserFriendlyName = "Genshin Impact"; IsIncludedByDefault = $true; FileName = "miHoYo_GenshinImpact.reg" },
     @{ Path = "HKEY_CURRENT_USER\Software\Cognosphere\Star Rail"; UserFriendlyName = "Honkai: Star Rail"; IsIncludedByDefault = $true; FileName = "Cognosphere_StarRail.reg" },
     @{ Path = "HKEY_CURRENT_USER\Software\miHoYo\ZenlessZoneZero"; UserFriendlyName = "Zenless Zone Zero"; IsIncludedByDefault = $true; FileName = "miHoYo_ZenlessZoneZero.reg" },
     @{ Path = "HKEY_CURRENT_USER\Software\miHoYo\Honkai Impact 3rd"; UserFriendlyName = "Honkai Impact 3rd"; IsIncludedByDefault = $true; FileName = "miHoYo_HonkaiImpact3rd.reg" },
